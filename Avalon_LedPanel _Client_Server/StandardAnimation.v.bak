@@ -1,0 +1,134 @@
+`timescale 1ns / 1ns
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 09.05.2017 19:09:05
+// Design Name: 
+// Module Name: StandardAnimation
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//  This module knows 4 types of animations :
+//      1. Step On/Off  --> Switches on with input, switches off with input
+//      2. Dim On/Off --> Dimms the area on with input, dimms the are off with input, <DimmingSlope> is a parameter, which specifies how fast dimming on and off is
+//      3. Slide On/Off --> Slides from outside into the area with input on, slides to outside with input off, <SlideDirection>, <DimmingSlope> and <SlidingSpeed> are parameters
+//      4. Pulsing  --> Pulses while input is on, <PulseFrequency>, <DimmingSlope> are parameters
+//      5. Waving --> Waves while input is on, <SlideDirection>, <PulseFrequency> are parameters
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module StandardAnimation (
+    input wire              clock_clk,
+    input wire              clock_v_sync,           //  This is the v_sync and gives the timebasis for the animations
+    input wire              reset_rst,
+
+    //  This is the avalon MM interface for the registers
+    input wire [2:0]        s0_address,
+    input wire              s0_read,
+    output reg [31:0]       s0_readdata,
+    input wire              s0_write,
+    input wire [31:0]       s0_writedata
+);
+
+    ////////////////////////////////////////////
+    //  Register layout:
+    // --------------------
+    //  $00:    <StartColumn>, <EndColumn>, <StartRow>, <EndRow>
+    //  $01:    <LightColorB>, <LightColorG>, <LightColorR>
+    //  $02:    <AnimationType>
+    //  $03:    <ParameterSlope>
+    //  $04:    <ParameterFrequency>
+    //  $05:    <ParameterDirection>
+    //  $06:    <ParameterSpeed>
+
+    reg [7:0]           RegStartColumn, RegEndColumn, RegStartRow, RegEndRow;
+    reg [7:0]           RegLightColorR, RegLightColorG, RegLightColorB;
+    reg [7:0]           RegAnimationType;
+    reg [31:0]          RegParameterSlope;
+    reg [31:0]          RegParameterFrequency;
+    reg [31:0]          RegParameterDirection;
+    reg [31:0]          RegParameterSpeed;
+
+
+    // Implement Avalon MM Register access (aaaaaand I'm doing it the complicated way :-( )
+    always @(posedge clock_clk) 
+        begin
+            if (reset_rst) begin
+                RegStartColumn  <= 8'b0;
+                RegEndColumn    <= 8'b0;
+                RegStartRow     <= 8'b0;
+                RegEndRow       <= 8'b0;
+            end else begin
+                if (s0_write) begin
+                    case (s0_address)
+                        3'd0:   
+                            begin
+                                RegStartColumn      <= s0_writedata[31:24]; 
+                                RegEndColumn        <= s0_writedata[23:16]; 
+                                RegStartRow         <= s0_writedata[15:8]; 
+                                RegEndRow           <= s0_writedata[7:0];
+                            end
+                        3'd1:
+                            begin
+                                RegLightColorR      <= s0_writedata[7:0];
+                                RegLightColorG      <= s0_writedata[15:8];
+                                RegLightColorB      <= s0_writedata[23:16];
+                            end
+                        3'd2:
+                            begin
+                                RegAnimationType    <= s0_writedata[7:0];
+                            end
+                        3'd3:
+                            begin
+                                RegParameterSlope   <= s0_writedata;
+                            end
+                        3'd4:
+                            begin
+                                RegParameterFrequency <= s0_writedata;
+                            end
+                        3'd5:
+                            begin
+                                RegParameterDirection <= s0_writedata;
+                            end
+                        3'd6:
+                            begin
+                                RegParameterSpeed   <= s0_writedata;                              
+                            end
+                    endcase
+                end
+            end
+        end
+
+    always @(posedge clock_clk) 
+        begin
+            if (reset_rst) begin
+                s0_readdata <= 32'b0;
+            end else begin
+                s0_readdata <= 32'b0;
+                if (s0_read) begin
+                    case (s0_address) begin
+                        3'd0:   s0_readdata <= {RegStartColumn, RegEndColumn, RegStartRow, RegEndRow};
+                        3'd1:   s0_readdata <= {8'b0, RegLightColorB, RegLightColorG, RegLightColorR};
+                        3'd2:   s0_readdata <= {24'b0, RegAnimationType};
+                        3'd3:   s0_readdata <= RegParameterSlope;
+                        3'd4:   s0_readdata <= RegParameterFrequency;
+                        3'd5:   s0_readdata <= RegParameterDirection;
+                        3'd6:   s0_readdata <= RegParameterSpeed;
+                        default:    s0_readdata <= 32'b0;
+                    endcase
+                end
+            end
+      
+        end
+
+
+endmodule
