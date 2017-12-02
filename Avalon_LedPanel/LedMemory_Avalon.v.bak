@@ -1,0 +1,124 @@
+module LedPanel_Avalon (
+	/* This is the avalon write port */
+	input 	wire				clock,
+	input		wire				reset,
+
+	input		wire	[10:0]	wr_address,
+	input		wire				wr_write,
+	input		wire	[31:0]	wr_writedata,
+	input		wire	[3:0]		wr_byteenable,
+//	output	wire				waitrequest,
+	
+	input		wire				wr_read,
+	output	reg	[31:0]	wr_readdata,
+	
+	/*	Here come the burst relevant signals */
+//	output	wire				burstcount,
+//	input		wire				beginbursttransfer
+
+	/* Here comes the external signals to the LED */
+	input		wire				clock200,
+	output	wire	[1:0]		led_red,
+	output	wire	[1:0]		led_green,
+	output	wire	[1:0]		led_blue,
+	output	wire	[3:0]		led_addr,
+	output	wire 				led_clock,
+	output	wire				led_blank,
+	output	wire				led_latch
+
+);
+
+	wire	[9:0]					rd_address;
+	
+	wire							v_sync;
+	reg							backBuffer;
+	wire	[31:0]				rd_data_upper, rd_data_lower;
+	
+	
+	
+	wire	rd_reg_cs, wr_reg_cs;
+//	wire	rd_mem_cs, wr_mem_cs;
+	
+	assign	rd_reg_cs = (wr_address == 0) && wr_read;
+	assign	wr_reg_cs = (wr_address == 0) && wr_write;
+
+	
+	
+	always @(posedge clock)
+		begin
+			if (reset) begin
+				backBuffer	<= 0;
+			end else begin
+				if (rd_reg_cs && wr_byteenable[0]) begin
+					backBuffer <= wr_writedata[0];
+				end
+			end
+		end
+	
+	always @(posedge clock)
+		begin
+			if (reset) begin
+				wr_readdata <= 32'h00000000;
+			end else begin
+				if (wr_reg_cs && wr_byteenable[0]) begin
+					wr_readdata <= {30'b0, v_sync, backBuffer};
+				end
+			end
+		end
+	
+	
+	
+	
+	
+
+	//	Instanitate the on-chip memory as upper
+	LedMemory	LedMemUpper (
+		.wrclock ( clock ),
+		.byteena_a ( byteenable ),
+		.wraddress ( wraddress_sig ),
+		.wren ( wren_sig ),
+		.data ( 0 ),
+		
+		.rdaddress ( {!backBuffer, rd_address} ),
+		.rdclock ( clock200 ),
+		.q ( rd_data_upper )
+	);
+
+	//	Instanitate the on-chip memory as lower
+	LedMemory	LedMemLower (
+		.wrclock ( clock ),
+		.byteena_a ( byteenable ),
+		.wraddress ( wraddress_sig ),
+		.wren ( wren_sig ),
+		.data ( 0 ),
+		
+		.rdaddress ( {!backBuffer, rd_address} ),
+		.rdclock ( clock200 ),
+		.q ( rd_data_lower )
+	);
+	
+	//	Instantiate the LedPanel Display Driver
+	LedPanel		#(
+		.COLOR_BITS(8), 
+		.DISPLAY_ROWS_LINES(4),
+		.DISPLAY_COLS_LINES(6)
+	) LedPanelDriver  (
+		.CLK(clock200),
+		.RST(reset),
+		.RED(led_red),
+		.GREEN(led_green),
+		.BLUE(led_blue),
+		.ADDR(led_addr),
+		.CLK_LED(led_clock),
+		.BLANK(led_blank),
+		.LATCH(led_latch),
+		
+		.memAddr(rd_address),
+		.memDataUpper({rd_data_upper[23:8],8'b11111111}),
+		.memDataLower({8'b11111111,rd_data_lower[15:0]}),
+		.v_sync(v_sync)
+	);
+
+
+
+endmodule

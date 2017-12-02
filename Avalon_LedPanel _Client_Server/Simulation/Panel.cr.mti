@@ -1,0 +1,16 @@
+{C:/Users/henry/OneDrive/Projects/fpga/ALTERA/_Components/Avalon_LedPanel _Client_Server/StandardAnimation.v} {2 {vlog -work work -stats=none {C:/Users/henry/OneDrive/Projects/fpga/ALTERA/_Components/Avalon_LedPanel _Client_Server/StandardAnimation.v}
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module StandardAnimation
+** Warning: C:/Users/henry/OneDrive/Projects/fpga/ALTERA/_Components/Avalon_LedPanel _Client_Server/StandardAnimation.v(246): (vlog-13230) Invalid argument '(' passed to ifdef macro.
+
+Top level modules:
+	StandardAnimation
+
+} {} {}} {C:/Users/henry/OneDrive/Projects/fpga/ALTERA/_Components/Avalon_LedPanel _Client_Server/Simulation/StandardSimulation_tb.v} {1 {vlog -work work -stats=none {C:/Users/henry/OneDrive/Projects/fpga/ALTERA/_Components/Avalon_LedPanel _Client_Server/Simulation/StandardSimulation_tb.v}
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module StandardAnimation_tb
+
+Top level modules:
+	StandardAnimation_tb
+
+} {} {}}

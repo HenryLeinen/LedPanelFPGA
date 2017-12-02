@@ -1,0 +1,36 @@
+`timescale 1ns/1ns
+module StandardAnimation_tb ();
+
+	reg	clock_clk;
+	reg	reset_rst;
+	reg	v_sync;
+
+	reg [3:0]	s0_address;
+	reg		s0_write, s0_read;
+	reg [31:0]	s0_readdata;
+	wire [31:0]	s0_writedata;
+
+	reg [2:0]	event_trigger;
+
+	//	Instantiate the DUT
+	StandardAnimation	#(
+		.NUM_REGIONS(2),
+		.DISPLAY_ROWS_LINES(4),
+		.DISPLAY_COLS_LINES(6),
+		.COLOR_BITS(8)
+	) DUT(
+		.clock_clk(clock_clk),
+		.reset_rst(reset_rst),
+		.v_sync(v_sync),
+		
+		.s0_address(s0_address),
+		.s0_read(s0_read),
+		.s0_readdata(s0_readdata),
+		.s0_write(s0_write),
+		.s0_writedata(s0_writedata),
+
+		.event_trigger(event_trigger),
+
+	);
+endmodule
+
